@@ -106,7 +106,7 @@ class DashboardView(APIView):
          dashboard_stats_serializer = DashboardStats()
          return Response(data={
              'money_stat': dashboard_serializer.data,
-             'graph_stats': dashboard_stats_serializer.data
+             'dash_stats': dashboard_stats_serializer.data
          }
          )
 

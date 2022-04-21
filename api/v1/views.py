@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.generics import get_object_or_404
-from .permissions import AdminORRead
 from rest_framework.permissions import  IsAuthenticated,IsAdminUser,AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
@@ -14,6 +13,7 @@ from db.models import Sponsor,Student,University,SponsorShip
 
 class Sponsor_list(generics.ListCreateAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = Sponsor.objects.all()
     serializer_class = SponsorSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
@@ -22,11 +22,13 @@ class Sponsor_list(generics.ListCreateAPIView):
 
 class Sponsor_detail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = Sponsor.objects.all()
     serializer_class = SponsorSerializer
 
 class Student_list(generics.ListCreateAPIView):
-    permission_classes = [IsAdminUser,IsAuthenticated]
+    permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
@@ -36,12 +38,15 @@ class Student_list(generics.ListCreateAPIView):
 
 
 class Student_detail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAdminUser,IsAuthenticated]
+    permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
+
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-#
+
 class SponsorShip_list(generics.ListCreateAPIView):
-    permission_classes = [IsAdminUser,IsAuthenticated]
+    permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = SponsorShip.objects.all()
     serializer_class = SponsorshipSerializer
     pagination_class = CustomPagination
@@ -51,11 +56,13 @@ class SponsorShip_list(generics.ListCreateAPIView):
 
 class SponsorShip_detail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = SponsorShip.objects.all()
     serializer_class = SponsorshipSerializer
 
 class University_list(generics.ListCreateAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
     filter_backends = [SearchFilter]
@@ -63,12 +70,14 @@ class University_list(generics.ListCreateAPIView):
 
 class University_detail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
 
 
-class SponsorshipsByStudentView(generics.ListAPIView):
+class Sponsorships_Student(generics.ListAPIView):
     permission_classes = [IsAdminUser]
+    pagination_class = CustomPagination
     serializer_class = Sponsorship_Student_Serializer
 
     def get_queryset(self):
@@ -77,7 +86,7 @@ class SponsorshipsByStudentView(generics.ListAPIView):
         return queryset
 
 
-class SponsorshipsBySponsorView(generics.ListAPIView):
+class Sponsorships_Sponsor(generics.ListAPIView):
     permission_classes = [IsAdminUser]
     serializer_class = Sponsorship_Sponsor_Serializer
 

@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from db.models import Sponsor,University,Student,SponsorShip
-from .validators import validate_positive,validate_sponsor_money,validate_sponsorship_money
+from db.models import *
+from .validators import validate_positive
+from .services import *
+
 from django.db.models.functions import Coalesce
 from django.db.models import Sum, Count
 
@@ -14,18 +16,18 @@ class UniversitySerializer(serializers.ModelSerializer):
 class SponsorSerializer(serializers.ModelSerializer):
     used_money = serializers.SerializerMethodField()
 
-
     class Meta:
         model = Sponsor
-        fields = '__all__'
+        fields = 'id', 'first_name', 'last_name', 'sponsor_status', 'company', 'money', 'used_money', 'status', 'email', 'created_dt'
+        # fields = '__all__'
         extra_kwargs = {
             'money': {'allow_null': False, 'required': True, 'validators': [validate_positive]},
         }
 
-        def create(self,validate_date):
-            validate_date['status'] = 'Yangi'
-            sponsor = Sponsor.objects.create(**validate_date)
-            return sponsor
+    def create(self, validate_data):
+        validate_data['status'] = 'Yangi'
+        sponsor = Sponsor.objects.create(**validate_data)
+        return sponsor
 
     @staticmethod
     def get_used_money(sponsor):
@@ -38,26 +40,27 @@ class SponsorSerializer(serializers.ModelSerializer):
         else:
             return None
 
+
 class StudentSerializer(serializers.ModelSerializer):
     university = UniversitySerializer(read_only=True)
-    university_id = serializers.IntegerField(required=True,write_only=True,allow_null=False)
+    university_id = serializers.IntegerField(allow_null=False, required=True, write_only=True)
     gained_money = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Student
-        fields = ['id','last_name','first_name','course','degree','contract','gained_money',
-                  'phone_number','email','created_dt','university','university_id']
+        fields = ['id', 'first_name', 'phone_number', 'contract', 'gained_money', 'degree', 'university',
+                  'university_id']
 
         extra_kwargs = {
-            'contract': {'validators': [validate_positive]},
-
+            'contract': {'allow_null': False, 'required': True, 'validators': [validate_positive]},
         }
 
     @staticmethod
     def get_gained_money(student):
         gained_money = student.sponsorships.aggregate(money_sum=Coalesce(Sum('money'), 0))['money_sum']
-
         return gained_money
+
 
 class SponsorshipSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
@@ -67,16 +70,16 @@ class SponsorshipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SponsorShip
-        fields = ['id', 'student', 'student_id', 'sponsor', 'sponsor_id', 'money', 'created_dt','update_dt']
-        extra_kwargs = {'money': {'validators': [validate_positive]}}
+        fields = ['id', 'student', 'student_id', 'sponsor', 'sponsor_id', 'money', ]
+        extra_kwargs = {'money': {'allow_null': False, 'required': True, 'validators': [validate_positive]}}
 
-        def update(self, instance, validated_data):
-             instance = validate_sponsor_money(instance, validated_data)
-             return instance
+    def update(self, instance, validated_data):
+        instance = services_sponsorship_money_update(instance, validated_data)
+        return instance
 
-        def create(self, validated_data):
-             instance = validate_sponsor_money(validated_data)
-             return instance
+    def create(self, validated_data):
+        instance = services_sponsorship_money_create(validated_data)
+        return instance
 
 
 class Sponsorship_Student_Serializer(serializers.ModelSerializer):
@@ -113,8 +116,6 @@ class Sponsorship_Sponsor_Serializer(serializers.ModelSerializer):
         return data
 
 
-
-
 class Dashboard:
     def __init__(self):
         self.sponsored_money = SponsorShip.objects.aggregate(Sum('money'))['money__sum']
@@ -132,7 +133,7 @@ class DashboardStats:
             'created_dt').annotate(
             count=Count('id')).values_list('created_dt', 'count')
         self.students_statistics = Student.objects.extra({'created_dt': "date(created_dt)"}).values(
-            'created_dt').annotate(
+            'created_dt', ).annotate(
             count=Count('id')).values_list('created_dt', 'count')
 
     @property
